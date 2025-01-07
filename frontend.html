@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>URL SHORTENER</title>
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+
+    <style>
+        body {
+            text-align: center;
+            padding: 50px;
+        }
+        .url-section {
+            margin-top: 10px;
+            margin-bottom: 10px;
+        }
+        .label-url {
+            color: black;
+            font-weight: bold;
+
+        }
+    </style>
+</head>
+
+<body>
+    <div>
+        <form id = "myForm">
+            <div class = "url-section">
+                <label class = 'label-url' for = "originalUrl">Enter the URL</label>
+                <br>
+                <input type = "url" id = "originalUrl" placeholder = "Enter the url">
+            </div>
+            <button type = "submit" class = "btn btn-primary">Shortern URL</button> 
+        </form>
+        <div class = "result" id = "shortenedUrlContainer">
+            <h4>Shortened Url:</h4>
+            <p class = "alert alert-info">
+                <a id="shortenedUrl" href="#" target="_blank"></a>
+            </p>
+        </div>
+
+        <div id = "errorContainer" class = "alert alert-danger">
+            <strong>ERROR:</strong>Something went wrong, please try again.
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', ()=> {
+            const form = document.getElementById("myForm");
+            const originalUrlEl = document.getElementById("originalUrl");
+            const shortenedUrlContainer = document.getElementById("shortenedUrlContainer");
+            const shortenedUrlEl = document.getElementById("shortenedUrl");
+            const errorMsgContainer = document.getElementById("errorContainer");
+
+            shortenedUrlContainer.style.display = 'none';
+            errorMsgContainer.style.display = 'none';
+
+            form.addEventListener("submit", async (event) => {
+                event.preventDefault();
+                const originalUrlValue = originalUrlEl.value.trim();
+
+                if (!originalUrlValue) {
+                    showError("Enter a valid url");
+                    return;
+                }
+                try {
+                    const response = await fetch('http://127.0.0.1:5000/shorten', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({original_url: originalUrlValue}),
+                    });
+
+                    if(!response.ok) {
+                        const errorData = await response.json();
+                        showError(errorData.error || 'An error occurred');
+                        return;
+                    }
+
+                    const data = await response.json();
+
+                    shortenedUrlEl.textContent = data.short_url;
+                    shortenedUrlEl.href = data.short_url;
+                    shortenedUrlEl.target = '_blank';
+                    shortenedUrlContainer.style.display = 'block';
+                    errorMsgContainer.style.display = 'none';
+
+                } catch(error) {
+                    showError('Failed to connect to server');
+                    console.error('Error:', error);
+                }
+            });
+
+            function showError(message) {
+                errorMsgContainer.textContent = `ERROR: ${message}`;
+                errorMsgContainer.style.display = 'block';
+                shortenedUrlContainer.style.display = 'none';
+            }
+        })
+    </script>
+</body>
+</html>
